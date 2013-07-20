@@ -18,10 +18,12 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
   
-  gem.add_runtime_dependency "rest-client"
-  gem.add_runtime_dependency "hpricot"
-  gem.add_development_dependency 'rspec'
-  gem.add_development_dependency 'fakeweb'
-  gem.add_development_dependency 'vcr'
-  gem.add_development_dependency 'active_support'
+  gem.add_runtime_dependency     'active_support', '3.0.0'
+  gem.add_runtime_dependency     'hpricot',        '0.8.6'
+  gem.add_runtime_dependency     'rest-client',    '1.6.7'
+  
+  gem.add_development_dependency 'rspec',   '2.14.1'
+  gem.add_development_dependency 'vcr',     '2.5.0'
+  gem.add_development_dependency 'webmock', '1.11.0'
+  
 end

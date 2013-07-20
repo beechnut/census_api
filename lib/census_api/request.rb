@@ -30,12 +30,16 @@ module CensusApi
       level = level.censify                 if level.kind_of? Hash
       level = level.to_s.singularize.upcase if level.kind_of? Symbol
       
-      options = options[:within].first
-      options = options if options.kind_of? String
-      options = options.collect {|opt| opt.join(':').upcase}.join('+') if options.kind_of? Hash
-      
+      # options_string = options.empty? ? "" : stringify(options)
+      unless options.empty?
+        options = options if options.kind_of? String
+        options ||= options[:within].first if options.kind_of? Hash
+        options = options.collect {|opt| opt.join(':').upcase}.join('+') if options.kind_of? Hash
+      end
+      options = "" if options.empty?
+
       params = { :key => api_key, :get => fields, :for => format(level, false) }
-      params.merge!({ :in => format(options,true) }) unless options.nil?
+      params.merge!({ :in => format(options, true) }) unless options.nil?
 
       request = new(CENSUS_URL, source, params)
       request.parse_response
