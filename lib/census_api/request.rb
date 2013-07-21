@@ -23,14 +23,17 @@ module CensusApi
     end
 
 
-    def self.find(source, api_key, fields, level, options = {})
-      fields = fields.split(",").push("NAME").join(",") if fields.kind_of? String
-      fields = fields.push("NAME").join(",") if fields.kind_of? Array
+    def self.find(source, api_key, fields, level, options={})
+      # puts "FIELDS: #{fields.inspect}"
+      # puts "LEVEL: #{level.inspect}"
+      # puts "OPTIONS: #{options.inspect}"
+
+      fields = fields.split(",") if fields.kind_of? String
+      fields = fields.push("NAME").join(",")
 
       level = level.censify                 if level.kind_of? Hash
       level = level.to_s.singularize.upcase if level.kind_of? Symbol
       
-      # options_string = options.empty? ? "" : stringify(options)
       unless options.empty?
         options = options if options.kind_of? String
         options ||= options[:within].first if options.kind_of? Hash

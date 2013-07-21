@@ -6,6 +6,10 @@ describe CensusApi::Request do
     pending "test each dataset, sf1 and acs5"
   end
 
+  describe "#geometry with at least one of every sumlev" do
+    pending "try COUSUB, SUBMCD, and all other geog/sumlev types"
+  end
+
   describe "#find one field" do
     
     context "API syntax" do
@@ -134,7 +138,7 @@ describe CensusApi::Request do
           end
           it "with one within" do
             VCR.use_cassette 'hash_num_onelevel_one_within_plur' do
-              response = CensusApi::Request.find('sf1', api_key, 'P0010001', county: 1, state: 1)
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: 1}, state: 1)
               response.size.should == 1
               response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
             end
@@ -156,8 +160,8 @@ describe CensusApi::Request do
         end
         it "with one within" do
           VCR.use_cassette 'hash_num_multilevel_one_within_plur' do
-            response = CensusApi::Request.find('sf1', api_key, 'P0010001', county: [1,3], state: 1)
-            response.size.should  == 1
+            response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: [1,3]}, state: 1)
+            response.size.should  == 2
             response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
             response.last.should  == {"P0010001"=>"182265", "name"=>"Baldwin County", "state"=>"01", "county"=>"003"}
           end
