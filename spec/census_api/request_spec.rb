@@ -83,9 +83,9 @@ describe CensusApi::Request do
     end
 
     context "with Hash syntax" do
+      
       describe "with numerical arguments" do
         context "with wildcard level" do
-
           describe "with no within" do
             it "singular" do
               VCR.use_cassette 'hash_num_wildcard_no_within_sing' do
@@ -119,26 +119,7 @@ describe CensusApi::Request do
               end
             end
           end
-
-          # describe "with multiple withins" do
-          #   it "singular" do
-          #     VCR.use_cassette 'hash_num_wildcard_multi_within_sing' do
-          #       response = CensusApi::Request.find('sf1', api_key, 'P0010001', :county, states: [01, 02])
-          #       response.size.should be > 67
-          #       response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
-          #     end
-          #   end
-          #   it "plural" do
-          #     VCR.use_cassette 'hash_num_wildcard_multi_within_mult' do
-          #       response = CensusApi::Request.find('sf1', api_key, 'P0010001', :counties, states: [01, 02])
-          #       response.size.should be > 67
-          #       response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
-          #     end
-          #   end
-          # end
-
         end
-
         context "with one specified level" do
           it "with no within" do
             VCR.use_cassette 'hash_num_onelevel_no_within_plur' do
@@ -158,30 +139,49 @@ describe CensusApi::Request do
           #   pending "county: 1, state: 01,02"
           # end
         end
-      end
-
-      context "with multiple levels specified" do
-        it "with no within" do
-          VCR.use_cassette 'hash_num_multilevel_no_within_plur' do
-            response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: [1,2])
-            response.size.should  == 2
-            response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
-            response.last.should  == {"P0010001"=>"710231", "name"=>"Alaska", "state"=>"02"} 
+        context "with multiple levels specified" do
+          it "with no within" do
+            VCR.use_cassette 'hash_num_multilevel_no_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: [1,2])
+              response.size.should  == 2
+              response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+              response.last.should  == {"P0010001"=>"710231", "name"=>"Alaska", "state"=>"02"} 
+            end
+          end
+          it "with one within" do
+            VCR.use_cassette 'hash_num_multilevel_one_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: [1,3]}, state: 1)
+              response.size.should  == 2
+              response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
+              response.last.should  == {"P0010001"=>"182265", "name"=>"Baldwin County", "state"=>"01", "county"=>"003"}
+            end
           end
         end
-        it "with one within" do
-          VCR.use_cassette 'hash_num_multilevel_one_within_plur' do
-            response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: [1,3]}, state: 1)
-            response.size.should  == 2
-            response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
-            response.last.should  == {"P0010001"=>"182265", "name"=>"Baldwin County", "state"=>"01", "county"=>"003"}
+      end
+
+      describe "with text geography arguments" do
+        context "one specified level" do
+          describe "no within" do
+            it "full state name" do
+              VCR.use_cassette 'one_state_full_name' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'Massachusetts')
+                response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+              end
+            end
+            it "state abbreviation" do
+              VCR.use_cassette 'one_state_abbv' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'MA')
+                response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+              end
+            end
           end
+        end
+        context "multiple specified levels" do
+          pending "no within sing/plur; one within sing/plur"
         end
       end
 
-      describe "with text arguments" do
-        pending "rewrite numerical arg tests with text args"
-      end
     end
+
   end
 end
