@@ -7,10 +7,24 @@ module CensusApi
       @georef = YAML.load(File.read('lib/yml/state_county.yml'))
     end
 
-    def find_id(param)
-      state = @georef.select{ |entry| entry['abbr'] == param }.first if param.length == 2
-      state = @georef.select{ |entry| entry['name'] == param }.first if param.length > 2
-      return state['id']
+    def find_state(param)
+      state = @georef.select{ |state| state['abbr'] == param }.first if param.length == 2
+      state = @georef.select{ |state| state['name'] == param }.first if param.length > 2
+      return state
+    end
+
+    def find_id(state)
+      find_state(state)['id'].to_i
+    end
+
+    def find_county_in_state(county, state)
+      state = find_state(state)
+      county = state['counties'].select{ |c| c['name'] == county }.first
+      return county['id'].to_i, state['id'].to_i
+    end
+
+    def get_counties_from_state(state)
+      find_state(state)['counties']
     end
 
   end

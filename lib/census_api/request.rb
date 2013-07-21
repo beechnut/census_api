@@ -24,10 +24,6 @@ module CensusApi
 
 
     def self.find(source, api_key, fields, level, options={})
-      # puts "FIELDS: #{fields.inspect}"
-      # puts "LEVEL: #{level.inspect}"
-      # puts "OPTIONS: #{options.inspect}"
-
       fields = fields.split(",") if fields.kind_of? String
       fields = fields.push("NAME").join(",")
 

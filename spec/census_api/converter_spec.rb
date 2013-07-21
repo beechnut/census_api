@@ -52,15 +52,17 @@ describe CensusApi::Converter do
     end
   end
 
-
   describe "with nested geography" do
     it "returns a state and county id given both in text" do
-      county, state = @converter.find_nested_ids('Worcester County', 'MA')
-      county.should == 27
-      state.should  == 25
+      county_id, state_id = @converter.find_county_in_state('Worcester County', 'MA')
+      county_id.should == 27
+      state_id.should  == 25
     end
   end
 
-
+  it "gets counties for a state" do
+    counties = @converter.get_counties_from_state('AL')
+    counties.first.should == {"name"=>"Autauga County", "id"=>"001"} 
+  end
 
 end
