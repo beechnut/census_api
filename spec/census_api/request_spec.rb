@@ -159,27 +159,27 @@ describe CensusApi::Request do
         end
       end
 
-      describe "with text geography arguments" do
-        context "one specified level" do
-          describe "no within" do
-            it "full state name" do
-              VCR.use_cassette 'one_state_full_name' do
-                response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'Massachusetts')
-                response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
-              end
-            end
-            it "state abbreviation" do
-              VCR.use_cassette 'one_state_abbv' do
-                response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'MA')
-                response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
-              end
-            end
-          end
-        end
-        context "multiple specified levels" do
-          pending "no within sing/plur; one within sing/plur"
-        end
-      end
+      # describe "with text geography arguments" do
+      #   context "one specified level" do
+      #     describe "no within" do
+      #       it "full state name" do
+      #         VCR.use_cassette 'one_state_full_name' do
+      #           response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'Massachusetts')
+      #           response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+      #         end
+      #       end
+      #       it "state abbreviation" do
+      #         VCR.use_cassette 'one_state_abbv' do
+      #           response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'MA')
+      #           response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+      #         end
+      #       end
+      #     end
+      #   end
+      #   context "multiple specified levels" do
+      #     pending "no within sing/plur; one within sing/plur"
+      #   end
+      # end
 
     end
 
