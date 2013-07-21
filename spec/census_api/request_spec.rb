@@ -3,7 +3,18 @@ require 'spec_helper'
 describe CensusApi::Request do
 
   describe "#find from each dataset" do
-    pending "test each dataset, sf1 and acs5"
+    it "queries SF1" do
+      VCR.use_cassette 'dataset_sf1' do
+        response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 1)
+        response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+      end
+    end
+    it "queries ACS5" do
+      VCR.use_cassette 'dataset_acs5' do
+        response = CensusApi::Request.find('acs5', api_key, 'B00001_001E', state: 1)
+        response.first.should == {"B00001_001E"=>"355334", "name"=>"Alabama", "state"=>"01"}
+      end
+    end
   end
 
   describe "#geometry with at least one of every sumlev" do
