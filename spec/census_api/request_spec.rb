@@ -2,116 +2,186 @@ require 'spec_helper'
 
 describe CensusApi::Request do
 
-  context "#find" do
-    [{:source => 'sf1', :field => 'P0010001', :results=> [
-        {"P0010001"=>"37253956", "name"=>"California", "state"=>"06"},
-        {"P0010001"=>"1510271", "name"=>"Alameda County", "state"=>"06", "county"=>"001"}
-      ]},
-      {:source => 'acs5', :field => 'B00001_001E', :results =>[
-        {"B00001_001E"=>"2330290", "name"=>"California", "state"=>"06"},
-        {"B00001_001E"=>"92854", "name"=>"Alameda County, California", "state"=>"06", "county"=>"001"}
-      ]}
-    ].each do |test|
-    
-      describe "#{test[:source]} for a geography type" do
-        use_vcr_cassette "#{test[:source]}_find_states"
-
-        before(:each) do
-          params = {:key=> api_key, :fields => test[:field], :level => 'STATE', :within=>[]}
-          @collection = CensusApi::Request.find(test[:source], params)      
-        end
-
-        it 'should have 52 results' do
-          @collection.count.should == 52
-        end
-      
-        it 'should include fields for each result' do
-          @collection.each do |result|
-            result.should include(test[:field])
-            result.should include('name')
-            result.should include('state')
-          end
-        end
+  describe "#find from each dataset" do
+    it "queries SF1" do
+      VCR.use_cassette 'dataset_sf1' do
+        response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 1)
+        response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
       end
-    
-      describe "#{test[:source]} for a geography type and id" do
-        use_vcr_cassette "#{test[:source]}_find_state_with_id"
-
-        before(:each) do
-          params = {:key=> api_key, :fields => test[:field], :level => 'STATE:06', :within=>[]}
-          @collection = CensusApi::Request.find(test[:source], params)      
-        end
-
-        it 'should have one result' do
-          @collection.count.should == 1
-        end
-      
-        it 'should include fields for each result' do
-          @collection.each do |result|
-            result.should == test[:results][0]
-          end
-        end
+    end
+    it "queries ACS5" do
+      VCR.use_cassette 'dataset_acs5' do
+        response = CensusApi::Request.find('acs5', api_key, 'B00001_001E', state: 1)
+        response.first.should == {"B00001_001E"=>"355334", "name"=>"Alabama", "state"=>"01"}
       end
-    
-      describe "#{test[:source]} for a geography type in a geography type" do
-        use_vcr_cassette "#{test[:source]}_find_counties_in_state"
-
-        before(:each) do
-          params = {:key=> api_key, :fields => test[:field], :level => 'COUNTY', :within=>['STATE:06']}
-          @collection = CensusApi::Request.find(test[:source], params)      
-        end
-
-        it 'should have one result' do
-          @collection.count.should == 58
-        end
-
-        it 'should include fields for each result' do
-          @collection.each do |result|
-            result.should include(test[:field])
-            result.should include('name')
-            result.should include('state')
-          end
-        end
-      end
-     
-      describe "#{test[:source]} for a geography type and id in a geography type" do
-        use_vcr_cassette "#{test[:source]}_find_county_in_state"
-
-          before(:each) do
-            params = {:key=> api_key, :fields => test[:field], :level => 'COUNTY:001', :within=>['STATE:06']}
-            @collection = CensusApi::Request.find(test[:source], params)      
-          end
-        
-          it 'should have one result' do
-            @collection.count.should == 1
-          end
-        
-          it 'should include fields for each result' do
-            @collection.each do |result|
-              result.should == test[:results][1]
-            end
-          end
-
-        end
-      # FIXME: no 'end' here: why not?
     end
   end
 
-  context "#format" do
-    it 'should add wildcard after reformatting geography type without id' do
-      CensusApi::Request.format('COUSUB', false).should == 'county+subdivision:*'
+  describe "#geometry with at least one of every sumlev" do
+    pending "try COUSUB, SUBMCD, and all other geog/sumlev types"
+  end
+
+  describe "#find one field" do
+    
+    context "API syntax" do
+      describe "numerical arguments" do
+
+        context "wildcard level" do
+          it "no within" do
+            VCR.use_cassette "api_num_wildcard_no_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'STATE')
+              response.size.should == 52
+              response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+            end
+          end
+          it "one within" do
+            VCR.use_cassette "api_num_wildcard_one_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'COUNTY', 'STATE:01')
+              response.size.should == 67
+              response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"} 
+            end
+          end
+          # it "multiple within arguments" do
+          #   VCR.use_cassette "api_num_wildcard_multi_arg_within" do
+          #     response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'COUNTY', 'STATE:01,02')
+          #     response.size.should be > 67
+          #   end
+          # end
+          it "multiple within geographies" do
+            VCR.use_cassette "api_num_wildcard_multi_geo_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'COUSUB', 'STATE:01+COUNTY:003')
+              response.size.should == 8
+              response.first.should == {"P0010001"=>"23604", "name"=>"Bay Minette CCD", "state"=>"01", "county"=>"003", "county subdivision"=>"90207"}
+            end
+          end
+        end
+
+        context "one specified level" do
+          it "no within" do
+            VCR.use_cassette "api_num_onelevel_no_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'STATE:01')
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+            end
+          end
+          it "one within" do
+            VCR.use_cassette "api_num_onelevel_one_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'COUNTY:001', 'STATE:01')
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"} 
+            end
+          end
+          it "multiple within geographies" do
+            VCR.use_cassette "api_num_onelevel_multi_geo_within" do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', 'COUSUB:90207', 'STATE:01+COUNTY:003')
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"23604", "name"=>"Bay Minette CCD", "state"=>"01", "county"=>"003", "county subdivision"=>"90207"}
+            end
+          end
+        end
+      end
     end
 
-    it 'should maintain geography id after reformatting geography type' do
-      CensusApi::Request.format('COUSUB:86690', false).should == 'county+subdivision:86690'
+    context "with Hash syntax" do
+      
+      describe "with numerical arguments" do
+        context "with wildcard level" do
+          describe "with no within" do
+            it "singular" do
+              VCR.use_cassette 'hash_num_wildcard_no_within_sing' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', :county)
+                response.size.should == 3221
+                response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"} 
+              end
+            end
+            it "plural" do
+              VCR.use_cassette 'hash_num_wildcard_no_within_plural' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', :counties)
+                response.size.should == 3221
+                response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"} 
+              end
+            end
+          end
+
+          describe "with one within" do
+            it "singular" do
+              VCR.use_cassette 'hash_num_wildcard_one_within_sing' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', :county, state: 01)
+                response.size.should == 67
+                response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
+              end
+            end
+            it "plural" do
+              VCR.use_cassette 'hash_num_wildcard_one_within_plur' do
+                response = CensusApi::Request.find('sf1', api_key, 'P0010001', :counties, state: 01)
+                response.size.should == 67
+                response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
+              end
+            end
+          end
+        end
+        context "with one specified level" do
+          it "with no within" do
+            VCR.use_cassette 'hash_num_onelevel_no_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 1)
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+            end
+          end
+          it "with one within" do
+            VCR.use_cassette 'hash_num_onelevel_one_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: 1}, state: 1)
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
+            end
+          end
+          # it "with multiple withins" do
+          #   pending "county: 1, state: 01,02"
+          # end
+        end
+        context "with multiple levels specified" do
+          it "with no within" do
+            VCR.use_cassette 'hash_num_multilevel_no_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: [1,2])
+              response.size.should  == 2
+              response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
+              response.last.should  == {"P0010001"=>"710231", "name"=>"Alaska", "state"=>"02"} 
+            end
+          end
+          it "with one within" do
+            VCR.use_cassette 'hash_num_multilevel_one_within_plur' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: [1,3]}, state: 1)
+              response.size.should  == 2
+              response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
+              response.last.should  == {"P0010001"=>"182265", "name"=>"Baldwin County", "state"=>"01", "county"=>"003"}
+            end
+          end
+        end
+      end
+
+      # describe "with text geography arguments" do
+      #   context "one specified level" do
+      #     describe "no within" do
+      #       it "full state name" do
+      #         VCR.use_cassette 'one_state_full_name' do
+      #           response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'Massachusetts')
+      #           response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+      #         end
+      #       end
+      #       it "state abbreviation" do
+      #         VCR.use_cassette 'one_state_abbv' do
+      #           response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 'MA')
+      #           response.first.should == {"P0010001"=>"6547629", "name"=>"Massachusetts", "state"=>"25"}
+      #         end
+      #       end
+      #     end
+      #   end
+      #   context "multiple specified levels" do
+      #     pending "no within sing/plur; one within sing/plur"
+      #   end
+      # end
+
     end
 
-    it 'should truncate geography type AIANNH' do
-      CensusApi::Request.format('AIANNH', true).should == 'american+indian+area:*'
-    end
-
-    it 'should not truncate geography type CBSA' do
-      CensusApi::Request.format('CBSA', true).should == 'metropolitan+statistical+area/micropolitan+statistical+area:*'
-    end
   end
 end

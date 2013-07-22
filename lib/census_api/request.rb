@@ -23,19 +23,22 @@ module CensusApi
     end
 
 
-    def self.find(source, api_key, fields, level, options = {})
-      fields = fields.split(",").push("NAME").join(",") if fields.kind_of? String
-      fields = fields.push("NAME").join(",") if fields.kind_of? Array
+    def self.find(source, api_key, fields, level, options={})
+      fields = fields.split(",") if fields.kind_of? String
+      fields = fields.push("NAME").join(",")
 
       level = level.censify                 if level.kind_of? Hash
       level = level.to_s.singularize.upcase if level.kind_of? Symbol
       
-      options = options[:within].first
-      options = options if options.kind_of? String
-      options = options.collect {|opt| opt.join(':').upcase}.join('+') if options.kind_of? Hash
-      
+      unless options.empty?
+        options = options if options.kind_of? String
+        options ||= options[:within].first if options.kind_of? Hash
+        options = options.collect {|opt| opt.join(':').upcase}.join('+') if options.kind_of? Hash
+      end
+      options = "" if options.empty?
+
       params = { :key => api_key, :get => fields, :for => format(level, false) }
-      params.merge!({ :in => format(options,true) }) unless options.nil?
+      params.merge!({ :in => format(options, true) }) unless options.nil?
 
       request = new(CENSUS_URL, source, params)
       request.parse_response
@@ -49,7 +52,7 @@ module CensusApi
           header = response.delete_at(0)
           return response.map{|r| Hash[header.map{|h| h.gsub("NAME","name")}.zip(r)]}
         else
-          return {:code => @response.code, :message=> "Invalid API key or request", :location=> @response.headers[:location], :body => @response.body}
+          return {:code => @response.code, :message=> "Error: invalid request", :location=> @response.headers[:location], :body => @response.body}
         end
     end
     

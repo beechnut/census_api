@@ -53,11 +53,25 @@ To query the 2006-2010 ACS5 dataset, set the dataset to 'ACS5':
 @client.dataset = 'ACS5' # or after initialization, setting the instance variable
 ```
 
-Then, use `Client#find` with the below parameters to query for Census data. For example:
+Then, use `Client#find` with parameters to query the dataset. You can use API-style syntax, but this gem is designed to let you use Rubyish syntax.
 
 ```ruby
-@client.find('P0010001', 'STATE:02,06')
+# Find a field for all of one top-level geography, e.g. states (see geography nesting below)
+@client.find('P0010001', :state) ; @client.find('P0010001', :states)
 
+# Find a field for one state, using the state's FIPS code
+@client.find('P0010001', state: 02)
+
+# Find a field for one county, specifying the superior geography level
+# When specifying a superior geography level, make sure to place at least the
+# target level in a hash
+@client.find('P0010001', {county: 1}, state: 25)
+@client.find('P0010001', {county: 1}, {state: 25})
+
+# Find a field for multiple geography units, specifying superior geography or not.
+# Use an array to pass in multiple values for an argument.
+@client.find('P0010001', states: [1,2])
+@client.find('P0010001', {counties: [1,2]}, state: 1)
 ```
 
 For a list of the fields available for each dataset, review the reference PDFs linked at the bottom of this document.
