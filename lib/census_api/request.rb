@@ -16,34 +16,23 @@ module CensusApi
     def initialize(url, source, options)
       path = "#{url}/#{source}?#{options.to_params}"
       # Is the block necessary?
-      @response = RestClient.get(path) do |response, request, result, &block|
-        response
-      end
+      @response = RestClient.get(path)
       return @response
     end
 
 
     def self.find(source, api_key, fields, level, options={})
-      fields = fields.split(",") if fields.kind_of? String
-      fields = fields.push("NAME").join(",")
+      fields  = format_field_params  fields
+      level   = format_level_params  level
+      options = format_option_params options
 
-      level = level.censify                 if level.kind_of? Hash
-      level = level.to_s.singularize.upcase if level.kind_of? Symbol
-      
-      unless options.empty?
-        options = options if options.kind_of? String
-        options ||= options[:within].first if options.kind_of? Hash
-        options = options.collect {|opt| opt.join(':').upcase}.join('+') if options.kind_of? Hash
-      end
-      options = "" if options.empty?
+
 
       params = { :key => api_key, :get => fields, :for => format(level, false) }
       params.merge!({ :in => format(options, true) }) unless options.nil?
 
-      request = new(CENSUS_URL, source, params)
-      request.parse_response
+      return new(CENSUS_URL, source, params).parse_response
     end
-
     
     def parse_response
       case @response.code
@@ -57,6 +46,28 @@ module CensusApi
     end
     
     protected
+
+      def self.format_option_params(options)
+        return "" if options.empty?
+        return options if options.kind_of? String
+        options = hash_to_census_string(options)
+      end
+
+      def self.hash_to_census_string(hash)
+        hash.collect {|option| option.join(':').upcase}.join('+')
+      end
+
+      def self.format_field_params(fields)
+        fields = fields.split(",") if fields.kind_of? String
+        fields = fields.push("NAME").join(",")
+        return fields
+      end
+
+      def self.format_level_params(level)
+        level = level.censify                 if level.kind_of? Hash
+        level = level.to_s.singularize.upcase if level.kind_of? Symbol
+        return level
+      end
   
       def self.format(str,truncate)
 

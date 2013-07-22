@@ -45,4 +45,14 @@ describe CensusApi::Client do
       end
     end
   end
+
+  describe "should process parameters" do
+    it "forms a correct url when handed a within param" do
+      VCR.use_cassette 'client_hashes' do
+        @client = CensusApi::Client.new(api_key, dataset: 'sf1')
+        result = @client.find('P0010001', {county: 25}, state: 25).first
+        result.should == {"P0010001"=>"722023", "name"=>"Suffolk County", "state"=>"25", "county"=>"025"}
+      end
+    end
+  end
 end

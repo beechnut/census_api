@@ -5,6 +5,7 @@ module CensusApi
 
     def initialize
       @georef = YAML.load(File.read('lib/yml/state_county.yml'))
+      return nil
     end
 
     def find_state(param)

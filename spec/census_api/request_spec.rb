@@ -122,22 +122,26 @@ describe CensusApi::Request do
         end
         context "with one specified level" do
           it "with no within" do
-            VCR.use_cassette 'hash_num_onelevel_no_within_plur' do
+            VCR.use_cassette 'hash_num_onelevel_no_within' do
               response = CensusApi::Request.find('sf1', api_key, 'P0010001', state: 1)
               response.size.should == 1
               response.first.should == {"P0010001"=>"4779736", "name"=>"Alabama", "state"=>"01"}
             end
           end
           it "with one within" do
-            VCR.use_cassette 'hash_num_onelevel_one_within_plur' do
+            VCR.use_cassette 'hash_num_onelevel_one_within' do
               response = CensusApi::Request.find('sf1', api_key, 'P0010001', {county: 1}, state: 1)
               response.size.should == 1
               response.first.should == {"P0010001"=>"54571", "name"=>"Autauga County", "state"=>"01", "county"=>"001"}
             end
           end
-          # it "with multiple withins" do
-          #   pending "county: 1, state: 01,02"
-          # end
+          it "with multiple withins" do
+            VCR.use_cassette 'hash_num_onelevel_multi_within' do
+              response = CensusApi::Request.find('sf1', api_key, 'P0010001', {cousub: 90171}, {state: 1, county: 1})
+              response.size.should == 1
+              response.first.should == {"P0010001"=>"3320", "name"=>"Autaugaville CCD", "state"=>"01", "county"=>"001", "county subdivision"=>"90171"} 
+            end
+          end
         end
         context "with multiple levels specified" do
           it "with no within" do
@@ -182,6 +186,24 @@ describe CensusApi::Request do
       # end
 
     end
+
+  context "#format" do
+    it 'should add wildcard after reformatting geography type without id' do
+      CensusApi::Request.format('COUSUB', false).should == 'county+subdivision:*'
+    end
+
+    it 'should maintain geography id after reformatting geography type' do
+      CensusApi::Request.format('COUSUB:86690', false).should == 'county+subdivision:86690'
+    end
+
+    it 'should truncate geography type AIANNH' do
+      CensusApi::Request.format('AIANNH', true).should == 'american+indian+area:*'
+    end
+
+    it 'should not truncate geography type CBSA' do
+      CensusApi::Request.format('CBSA', true).should == 'metropolitan+statistical+area/micropolitan+statistical+area:*'
+    end
+  end
 
   end
 end
