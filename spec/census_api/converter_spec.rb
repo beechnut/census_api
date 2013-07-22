@@ -58,6 +58,13 @@ describe CensusApi::Converter do
       county_id.should == 27
       state_id.should  == 25
     end
+
+    it "returns multiple counties in a state" do
+      counties = ['Middlesex County', 'Suffolk County', 'Worcester County']
+      county_ids, state_id = @converter.find_counties_in_state(counties, 'MA')
+      county_ids.should == [17, 25, 27]
+      state_id.should   == 25
+    end
   end
 
   it "gets counties for a state" do

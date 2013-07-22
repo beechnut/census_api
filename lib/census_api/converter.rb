@@ -23,6 +23,11 @@ module CensusApi
       return county['id'].to_i, state['id'].to_i
     end
 
+    def find_counties_in_state(counties, state)
+      county_ids = find_state(state)['counties'].select{|e| counties.include?(e['name'])}.collect{|e| e['id'].to_i}
+      return county_ids, find_id(state)
+    end
+
     def get_counties_from_state(state)
       find_state(state)['counties']
     end
