@@ -5,21 +5,18 @@ module CensusApi
 
     def initialize
       @georef = YAML.load(File.read('lib/yml/state_county.yml'))
-      puts "Converter initialized."
     end
 
 
     def translate_names_to_nums(parameters)
       num_params = {}
-      puts parameters
-
+      
+      # Better way to do this: collect singularized keys
       parameters.each_pair do |key, value|
-        puts "#{key}: #{value}"
         key = key.to_s.singularize.downcase.to_sym
         val = nil
         
-        # TODO: Remove conditional and make symbol part of method name call
-        # Ripe for metaprogramming!
+        # TODO: Metaprogram so key is part of method call
         if key == :state
           val = find_state_ids(value) if value.kind_of? Array
           val = find_state_id(value)  if value.kind_of? String
