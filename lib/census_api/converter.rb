@@ -5,8 +5,35 @@ module CensusApi
 
     def initialize
       @georef = YAML.load(File.read('lib/yml/state_county.yml'))
-      return nil
+      puts "Converter initialized."
     end
+
+
+    def translate_names_to_nums(parameters)
+      num_params = {}
+      puts parameters
+
+      parameters.each_pair do |key, value|
+        puts "#{key}: #{value}"
+        key = key.to_s.singularize.downcase.to_sym
+        val = nil
+        
+        # TODO: Remove conditional and make symbol part of method name call
+        # Ripe for metaprogramming!
+        if key == :state
+          val = find_state_ids(value) if value.kind_of? Array
+          val = find_state_id(value)  if value.kind_of? String
+        elsif key == :county
+          val = find_county_ids(value, parameters[:state]) if value.kind_of? Array
+          val = find_county_id(value,  parameters[:state]) if value.kind_of? String
+        end
+        num_params.merge!(Hash[key, val])
+      end
+
+      return num_params
+    end
+
+
 
     def find_state(param)
       state = @georef.select{ |state| state['abbr'] == param }.first if param.length == 2
@@ -27,6 +54,13 @@ module CensusApi
 
     def find_state_id(state)
       return find_state(state)['id'].to_i
+    end
+
+    def find_state_ids(states)
+      unless states.kind_of? Array
+        raise ArgumentError, "Request#find_counties takes an array of county names."
+      end
+      return states.collect{ |state| find_state_id(state) }
     end
 
     def find_county_id(county, state)
