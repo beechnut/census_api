@@ -14,23 +14,35 @@ module CensusApi
       return state
     end
 
-    def find_id(state)
-      find_state(state)['id'].to_i
-    end
-
-    def find_county_in_state(county, state)
+    def find_county(county, state)
       state = find_state(state)
-      county = state['counties'].select{ |c| c['name'] == county }.first
-      return county['id'].to_i, state['id'].to_i
+      return state['counties'].select{ |c| c['name'] == county }.first
     end
 
-    def find_counties_in_state(counties, state)
-      county_ids = find_state(state)['counties'].select{|e| counties.include?(e['name'])}.collect{|e| e['id'].to_i}
-      return county_ids, find_id(state)
+    def find_counties(counties, state)
+      unless counties.kind_of? Array
+        raise ArgumentError, "Request#find_counties takes an array of county names."
+      end
+    end
+
+    def find_state_id(state)
+      return find_state(state)['id'].to_i
+    end
+
+    def find_county_id(county, state)
+      return find_county(county, state)['id'].to_i
+    end
+
+    def find_counties(counties, state)
+      return find_state(state)['counties'].select{|e| counties.include?(e['name'])}
+    end
+
+    def find_county_ids(counties, state)
+      return find_counties(counties, state).collect{|e| e['id'].to_i}
     end
 
     def get_counties_from_state(state)
-      find_state(state)['counties']
+      return find_state(state)['counties']
     end
 
   end

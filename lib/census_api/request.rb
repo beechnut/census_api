@@ -14,9 +14,7 @@ module CensusApi
     CENSUS_URL = "http://api.census.gov/data/2010"
 
     def initialize(url, source, options)
-      path = "#{url}/#{source}?#{options.to_params}"
-      # Is the block necessary?
-      @response = RestClient.get(path)
+      @response = RestClient.get("#{url}/#{source}?#{options.to_params}")
       return @response
     end
 
@@ -26,14 +24,13 @@ module CensusApi
       level   = format_level_params  level
       options = format_option_params options
 
-
-
       params = { :key => api_key, :get => fields, :for => format(level, false) }
       params.merge!({ :in => format(options, true) }) unless options.nil?
 
       return new(CENSUS_URL, source, params).parse_response
     end
     
+
     def parse_response
       case @response.code
         when 200
@@ -54,7 +51,9 @@ module CensusApi
       end
 
       def self.hash_to_census_string(hash)
-        hash.collect {|option| option.join(':').upcase}.join('+')
+        hash.collect do |option|
+          option.join(':').upcase
+        end.join('+')
       end
 
       def self.format_field_params(fields)
@@ -70,7 +69,6 @@ module CensusApi
       end
   
       def self.format(str,truncate)
-
         result = str.split("+").map do |s|
           if s.match(":")
             s = s.split(":")
@@ -82,7 +80,6 @@ module CensusApi
           s.unshift(s.shift.split("/")[0]) if !s[0].scan("home+land").empty? && truncate
           s.join(":")
         end
-
         return result.join("+")
       end 
       
