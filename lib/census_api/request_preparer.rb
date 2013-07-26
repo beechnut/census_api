@@ -5,21 +5,27 @@ module CensusApi
 
 
 
-    def self.prepare_request(of, within)
+    def self.prepare_request(of, within=nil)
 
-      of_key     = of.format_keys.first.first     if of
-      within_key = within.format_keys.first.first if within
+      puts "RequestPreparer#prepare_request"
+      puts "within is #{within.inspect}"
+
+      of     = of.format_keys
+      within = within.format_keys    if within
+
+      of_key     = of.keys.first
+      within_key = within.keys.first if within
 
       geopath = of
-      geopath = of.merge(within)                  if within
+      geopath = of.merge(within)     if within
 
       if geopath.keys.include? :county and geopath.keys.include? :state
         puts "both found"
-        county = geopath[:county]
-        state  = geopath[:state]
+        county           = geopath[:county]
+        state            = geopath[:state]
         geopath[:county] = @converter.county_id(county, state)
         geopath[:state]  = @converter.state_id(state)
-        
+
       elsif geopath.keys.include? :county
         puts "county found"
         county = geopath[:county]
@@ -34,7 +40,8 @@ module CensusApi
       of = geopath[of_key]
       within = geopath[within_key] if within
 
-      return_values = [Hash[of_key, of], Hash[within_key, within]]
+      return_values = [Hash[of_key, of], nil]
+      return_values = return_values.compact << Hash[within_key, within] if within
       puts "prepare_request return values: #{return_values.inspect}"
       return return_values
     end
@@ -58,6 +65,7 @@ module CensusApi
       return val.join(',') if val.kind_of? Array
       val
     end
+
 
     def self.make_convertible_string(hash)
       puts "RequestPreparer#make_convertible_string"
