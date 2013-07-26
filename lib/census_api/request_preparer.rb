@@ -4,7 +4,6 @@ module CensusApi
     @converter = CensusApi::Converter.new
 
     def self.prepare_request(of, within)
-
       geopath = of.merge(within).format_keys
 
       if geopath.keys.include? :county and geopath.keys.include? :state
@@ -27,8 +26,39 @@ module CensusApi
         geopath[:state] = @converter.state_id(state)
         return geopath
       end
-
     end
+
+
+    def self.format_request(api_key, fields, params)
+      # TODO: This is going to be super-f'd
+      params = { :key => api_key, :get => fields, :for => format(of, false) }
+      params.merge!({ :in => format(within, true) }) unless within.nil?
+    end
+
+    protected
+  
+      def self.format(str,truncate)
+        result = str.split("+").map do |s|
+          if s.match(":")
+            s = s.split(":")
+          else 
+            s = [s,"*"]
+          end
+          shp = shapes[s[0].upcase]
+          s.shift && s.unshift(shp['name'].downcase.gsub(" ", "+")) if !shp.nil?
+          s.unshift(s.shift.split("/")[0]) if !s[0].scan("home+land").empty? && truncate
+          s.join(":")
+        end
+        return result.join("+")
+      end
+
+      def self.shapes
+        return @@census_shapes if defined?( @@census_shapes )
+        @@census_shapes = {}
+        YAML.load_file( File.dirname(__FILE__).to_s + '/../yml/census_shapes.yml' ).each{ |k,v| @@census_shapes[k] = v }
+        return @@census_shapes
+      end
+
   end
 end
 
@@ -48,6 +78,10 @@ class Hash
   def format_keys
     key_ary = self.downcase_keys
     key_ary = key_ary.singularize_keys
+  end
+
+  def to_params
+    self.map { |k,v| "#{k}=#{v}" }.join("&")
   end
 
 end
