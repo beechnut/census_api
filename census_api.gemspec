@@ -6,7 +6,7 @@ require 'census_api/version'
 Gem::Specification.new do |gem|
   gem.name          = "census_api"
   gem.version       = CensusApi::VERSION
-  gem.authors       = ["Ty Rauber"]
+  gem.authors       = ["Ty Rauber", "Matt Cloyd"]
   gem.license       = 'MIT'
   gem.email         = ["tyrauber@mac.com"]
   gem.description   = %q{A Ruby Gem for querying the US Census Bureau API}
