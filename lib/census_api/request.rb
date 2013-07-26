@@ -13,21 +13,26 @@ module CensusApi
     
     CENSUS_URL = "http://api.census.gov/data/2010"
 
-    def initialize(url, source, options)
-      @response = RestClient.get("#{url}/#{source}?#{options.to_params}")
+    def initialize(dataset, params)
+      @response = RestClient.get("#{CENSUS_URL}/#{dataset}?#{options.to_params}")
       return @response
     end
 
 
-    def self.find(source, api_key, fields, level, options={})
-      fields  = format_field_params  fields
-      level   = format_level_params  level
-      options = format_option_params options
+    def self.find(args)
+      dataset = args[:dataset]
+      api_key = args[:api_key]
+      fields  = args[:fields]
+      of      = args[:of]
+      within  = args[:within]
 
-      params = { :key => api_key, :get => fields, :for => format(level, false) }
-      params.merge!({ :in => format(options, true) }) unless options.nil?
+      params = RequestPreparer.prepare_request(of, within)
+      params = RequestPreparer.format_request(api_key, fields, params)
 
-      return new(CENSUS_URL, source, params).parse_response
+      params = { :key => api_key, :get => fields, :for => format(of, false) }
+      params.merge!({ :in => format(within, true) }) unless within.nil?
+
+      return new(dataset, params).parse_response
     end
     
 
@@ -47,7 +52,12 @@ module CensusApi
       def self.format_option_params(options)
         return "" if options.empty?
         return options if options.kind_of? String
+        @converter = CensusApi::Converter.new
+        puts "before #{options}"
+        options = @converter.translate_names_to_nums(options)
+        puts "after convert #{options}"
         options = hash_to_census_string(options)
+        puts "after hash #{options}"
       end
 
       def self.hash_to_census_string(hash)
