@@ -36,12 +36,11 @@ module CensusApi
 
       of = geopath[of_key]
       within = geopath[within_key]
-      return {of: Hash[of_key, of], within: Hash[within_key, within]}
+      return [Hash[of_key, of], Hash[within_key, within]]
     end
 
 
-    def self.format_request(api_key, fields, params)
-      # TODO: This is going to be super-f'd
+    def self.format_request(api_key, fields, of, within)
       params = { :key => api_key, :get => fields, :for => format(of, false) }
       params.merge!({ :in => format(within, true) }) unless within.nil?
     end

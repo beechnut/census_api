@@ -27,8 +27,8 @@ module CensusApi
       of      = args[:of]
       within  = args[:within]
 
-      params = RequestPreparer.prepare_request(of, within)
-      params = RequestPreparer.format_request(api_key, fields, params)
+      of, within = RequestPreparer.prepare_request(of, within)
+      params = RequestPreparer.format_request(api_key, fields, of, within)
 
       return new(dataset, params).parse_response
     end
