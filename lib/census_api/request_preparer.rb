@@ -4,7 +4,17 @@ module CensusApi
     @converter = CensusApi::Converter.new
 
     def self.prepare_request(of, within)
-      geopath = of.merge(within).format_keys
+
+      # FUCK. Singularize and downcase then store of, within keys
+      # Merge into geopath, do the SHIT.
+      # Split back into of and within hases based on stored keys
+      # Because you need to pass the api of and within
+      of_key     = of.format_keys.first.first
+      within_key = within.format_keys.first.first
+
+      puts "of: #{of_key}, within: #{within_key}"
+
+      geopath = of.merge(within)
 
       if geopath.keys.include? :county and geopath.keys.include? :state
         puts "both found"
@@ -12,20 +22,21 @@ module CensusApi
         state  = geopath[:state]
         geopath[:county] = @converter.county_id(county, state)
         geopath[:state]  = @converter.state_id(state)
-        return geopath
-
+        
       elsif geopath.keys.include? :county
         puts "county found"
         county = geopath[:county]
         geopath[:county] = @converter.county_id(county)
-        return geopath
-
+        
       elsif geopath.keys.include? :state
         puts "state found"
         state = geopath[:state]
         geopath[:state] = @converter.state_id(state)
-        return geopath
       end
+
+      of = geopath[of_key]
+      within = geopath[within_key]
+      return {of: Hash[of_key, of], within: Hash[within_key, within]}
     end
 
 
@@ -49,6 +60,7 @@ module CensusApi
           s.unshift(s.shift.split("/")[0]) if !s[0].scan("home+land").empty? && truncate
           s.join(":")
         end
+        puts result.inspect
         return result.join("+")
       end
 
