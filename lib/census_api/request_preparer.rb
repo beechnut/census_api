@@ -3,18 +3,15 @@ module CensusApi
 
     @converter = CensusApi::Converter.new
 
+
+
     def self.prepare_request(of, within)
 
-      # FUCK. Singularize and downcase then store of, within keys
-      # Merge into geopath, do the SHIT.
-      # Split back into of and within hases based on stored keys
-      # Because you need to pass the api of and within
-      of_key     = of.format_keys.first.first
-      within_key = within.format_keys.first.first
+      of_key     = of.format_keys.first.first     if of
+      within_key = within.format_keys.first.first if within
 
-      puts "of: #{of_key}, within: #{within_key}"
-
-      geopath = of.merge(within)
+      geopath = of
+      geopath = of.merge(within)                  if within
 
       if geopath.keys.include? :county and geopath.keys.include? :state
         puts "both found"
@@ -35,19 +32,47 @@ module CensusApi
       end
 
       of = geopath[of_key]
-      within = geopath[within_key]
-      return [Hash[of_key, of], Hash[within_key, within]]
+      within = geopath[within_key] if within
+
+      return_values = [Hash[of_key, of], Hash[within_key, within]]
+      puts "prepare_request return values: #{return_values.inspect}"
+      return return_values
     end
+
 
 
     def self.format_request(api_key, fields, of, within)
+      puts "RequestPreparer#format_request"
+      of     = self.make_convertible_string(of)
+      within = self.make_convertible_string(within) if within
+      # I feel like the above step is an unnecessary intermediary.
+
       params = { :key => api_key, :get => fields, :for => format(of, false) }
       params.merge!({ :in => format(within, true) }) unless within.nil?
+      params = params.to_params
     end
+
+
+    def self.cond_join(val)
+      puts "RequestPreparer#cond_join"
+      return val.join(',') if val.kind_of? Array
+      val
+    end
+
+    def self.make_convertible_string(hash)
+      puts "RequestPreparer#make_convertible_string"
+      puts hash.inspect
+      ret = "#{hash.keys.first.to_s}:#{self.cond_join(hash.values.first)}"
+      puts ret.inspect
+      puts "end RequestPreparer#make_convertible_string"
+      return ret
+    end
+
 
     protected
   
       def self.format(str,truncate)
+        puts "RequestPreparer#format"
         result = str.split("+").map do |s|
           if s.match(":")
             s = s.split(":")

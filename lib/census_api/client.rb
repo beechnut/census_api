@@ -6,7 +6,7 @@ module CensusApi
 
     def initialize(api_key, options = {})
       raise ArgumentError, "You must set an api_key." unless api_key
-      raise ArgumentError, "#{api_key} is not a valid API key." unless valid_api_key(api_key)
+      raise ArgumentError, "#{api_key} is not a valid API key." if invalid_api_key(api_key)
 
       @api_key = api_key
       if options[:dataset]
@@ -15,14 +15,12 @@ module CensusApi
       end
     end
 
-    def valid_api_key(key)
+    def invalid_api_key(key)
       # Use RestClient directly to determine the validity of the API Key
       path = "http://api.census.gov/data/2010/sf1?key=#{api_key}&get=P0010001&for=state:01"
       response = RestClient.get(path)
 
-      if response.body.include? "Invalid Key"
-        raise "'#{api_key}' is not a valid API key. Check your key for errors, or request a new one at census.gov."
-      end
+      return response.body.include? "Invalid Key"
     end
 
     def dataset=(dataset)
@@ -35,10 +33,10 @@ module CensusApi
       of     = args[:of]
       within = args[:within]
 
-      Request.find( dataset: @dataset
-                    api_key: @api_key
-                    fields:  fields
-                    of:      of
+      Request.find( dataset: @dataset,
+                    api_key: @api_key,
+                    fields:  fields,
+                    of:      of,
                     within:  within )
     end
 
